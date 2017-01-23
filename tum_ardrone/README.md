@@ -13,11 +13,11 @@ The code works for both the AR.Drone 1.0 and 2.0, the default-parameters however
 
 ## Installation
 
-### with catkin
+### with catkin (original version suggested hydro-devel, but I installed indigo-devel)
 
 ``` bash
 cd catkin_ws/src
-git clone https://github.com/tum-vision/tum_ardrone.git -b hydro-devel
+git clone https://github.com/tum-vision/tum_ardrone.git -b indigo-devel
 cd ..
 rosdep install tum_ardrone
 catkin_make
