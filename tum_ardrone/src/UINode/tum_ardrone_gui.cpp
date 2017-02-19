@@ -457,8 +457,8 @@ void tum_ardrone_gui::on_buttonCentral_clicked()
 
     vector<float> vec;
 
-//    ros::Rate r(0.1); // 1 hz
-//    while(ros::ok()){
+    ros::Rate r(0.1); // 1 hz
+    while(ros::ok()){
 
 
         float value;
@@ -481,8 +481,8 @@ void tum_ardrone_gui::on_buttonCentral_clicked()
 
         rosThread->sendSetAutoflight();
 
-//        r.sleep();
-//    }
+        r.sleep();
+    }
 
 }
 
