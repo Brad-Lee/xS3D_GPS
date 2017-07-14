@@ -450,6 +450,8 @@ ControlCommand tum_ardrone_gui::calcKBControl()
 	return c;
 }
 
+int l = 0;// increasing by 4 for a loop
+
 //added part
 void tum_ardrone_gui::on_buttonCentral_clicked()
 {
@@ -457,29 +459,99 @@ void tum_ardrone_gui::on_buttonCentral_clicked()
 
     vector<float> vec;
 
-    ros::Rate r(0.1); // 1 hz
+    float value;
+
+    ifstream myFile;
+    myFile.open("/home/xs3d/catkin_ws/src/tum_ardrone/flightPlans/command.txt");
+
+    if(myFile.is_open()){
+        while(myFile >> value){
+            vec.push_back(value);
+        }
+    }
+    myFile.close();
+
+    rosThread->sendLand();
+
+    ros::Rate r(1);
     while(ros::ok()){
+        //Takeoff (1    time)
+        if(vec[l] == 1){
 
+            time_t m;
+            struct tm * ti;
+            time(&m);
+            ti = localtime(&m); //current time
+            int ti_c = 120*ti->tm_hour + 2*ti->tm_min + ti->tm_sec/30; //current time in unit(1min)
 
-        float value;
-
-        ifstream myFile;
-        myFile.open("/home/xs3d/catkin_ws/src/tum_ardrone/flightPlans/command.txt");
-
-        if(myFile.is_open()){
-            while(myFile >> value){
-                vec.push_back(value);
+            if(ti_c == vec[l+3]){
+                rosThread->sendTakeoff();
+                l=l+4;
             }
         }
-        myFile.close();
+        //Land (7)
+        if(vec[l] == 7){
+            time_t m;
+            struct tm * ti;
+            time(&m);
+            ti = localtime(&m); //current time
+            int ti_c = 120*ti->tm_hour + 2*ti->tm_min + ti->tm_sec/30; //current time in unit(1min)
 
-        rosThread->SetGPSTarget_srv_srvs.request.target.position.latitude = vec[0];
-        rosThread->SetGPSTarget_srv_srvs.request.target.position.longitude = vec[1];
-        rosThread->SetGPSTarget_srv_srvs.request.target.position.altitude = vec[2];
+            if(ti_c == vec[l+3]){
+               rosThread->sendLand();
+            }
+        }
+        //Track (2)
+        if(vec[l] == 2){
 
-        rosThread->sendSetGPSTarget();
+            time_t m;
+            struct tm * ti;
+            time(&m);
+            ti = localtime(&m); //current time
+            int ti_c = 120*ti->tm_hour + 2*ti->tm_min + ti->tm_sec/30; //current time in unit(1min)
 
-        rosThread->sendSetAutoflight();
+            if(ti_c == vec[l+3]){
+
+                rosThread->SetGPSTarget_srv_srvs.request.target.position.latitude = vec[l+1];
+                rosThread->SetGPSTarget_srv_srvs.request.target.position.longitude = vec[l+2];
+                rosThread->SetGPSTarget_srv_srvs.request.target.position.altitude = 1.5;
+                rosThread->sendSetGPSTarget();
+                rosThread->sendSetAutoflight();
+
+
+                /*
+                //l=l+4 when UAV's current location is reached at destination.
+
+                float value_la, value_lo;
+
+                ifstream laFile;
+                laFile.open("/home/xs3d/latitude.txt");
+                if(laFile.is_open()){
+                    laFile >> value_la;
+                }
+                laFile.close();
+
+                ifstream loFile;
+                loFile.open("/home/xs3d/longitude.txt");
+                if(loFile.is_open()){
+                    loFile >> value_lo;
+                }
+                laFile.close();
+
+                float tol = 0.000050;
+                if(value_la>vec[l+1]-tol && value_la<vec[l+1]+tol && value_lo > vec[l+2]-tol && value_lo < vec[l+2]+tol){
+                    l=l+4;
+                }
+                */
+
+            }
+
+            //l=l+4 when time duration is over
+            if(ti_c > vec[l+3]){
+                l=l+4;
+            }
+
+        }
 
         r.sleep();
     }
